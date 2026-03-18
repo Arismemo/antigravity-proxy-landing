@@ -144,7 +144,7 @@
                 <strong class="text-white">Agent terminated due to error</strong>（也写作 Agent execution terminated due to error）是 Antigravity 的 AI 编程助手在执行任务时异常终止的错误提示。它意味着 Claude 模型正在处理你的请求，但在中途被强制中断了。
             </p>
             <p>
-                根据 <a href="https://github.com/anthropics/claude-code" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">GitHub Issues</a> 和 <a href="https://www.reddit.com/r/ClaudeAI/" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">Reddit r/ClaudeAI</a> 的讨论，这是一个**笼统的终止信号**，真正原因可能包括网络超时、MCP 工具冲突、输入过大、配额用尽、或服务端临时故障。Antigravity 通常会提供 "Retry" 和 "Dismiss" 两个按钮，但很多用户反馈即使点击 Retry 也无法恢复。
+                根据 <a href="https://github.com/anthropics/claude-code" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">GitHub Issues</a> 和 <a href="https://www.reddit.com/r/ClaudeAI/" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">Reddit r/ClaudeAI</a> 的讨论，这是一个<strong class="text-white">笼统的终止信号</strong>，真正原因可能包括网络超时、MCP 工具冲突、输入过大、配额用尽、或服务端临时故障。Antigravity 通常会提供 "Retry" 和 "Dismiss" 两个按钮，但很多用户反馈即使点击 Retry 也无法恢复。
             </p>
             <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm">
                 <p class="text-amber-400 font-semibold mb-1">💡 重要区分</p>
@@ -161,7 +161,7 @@
                 <li class="flex items-start gap-3">
                     <span class="text-red-400 font-bold mt-0.5">①</span>
                     <div>
-                        <strong class="text-white">SSE 长连接机制</strong>：Claude Opus 的回复使用 Server-Sent Events (SSE) 流式传输。一次复杂的代码生成可能持续 <strong class="text-white">30 秒到 5 分钟</strong>。这要求网络连接在整个过程中不中断——但据 GitHub Issues 反馈，Claude Desktop 的客户端存在**硬编码的 60 秒超时限制**。
+                        <strong class="text-white">SSE 长连接机制</strong>：Claude Opus 的回复使用 Server-Sent Events (SSE) 流式传输。一次复杂的代码生成可能持续 <strong class="text-white">30 秒到 5 分钟</strong>。这要求网络连接在整个过程中不中断——但据 GitHub Issues 反馈，Claude Desktop 的客户端存在<strong class="text-white">硬编码的 60 秒超时限制</strong>。
                     </div>
                 </li>
                 <li class="flex items-start gap-3">
