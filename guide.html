@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="znBbMJiKgIXEEOti18Kv8GcLXZEuxScAFRUuFiycrlA" />
+    <title>Antigravity Agent terminated due to error 完全解决指南 (2026)</title>
+    <meta name="description" content="深入分析 Antigravity 中 Agent terminated due to error 报错的 5 大根因，提供 7 种经社区验证的排查方法。来自 Reddit、GitHub Issues 和 V2EX 的真实解决方案汇总。">
+    <meta name="keywords" content="Antigravity, Agent terminated due to error, Agent execution terminated due to error, Claude Opus 报错, MCP 超时, MCP 冲突, Firebase MCP, 网络代理, 开发者专线, V2EX, Clash, 代理超时">
+    <link rel="canonical" href="https://arismemo.github.io/antigravity-proxy-landing/guide.html">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta property="og:title" content="Antigravity Agent terminated due to error 完全解决指南 (2026)">
+    <meta property="og:description" content="来自 Reddit、GitHub 和 V2EX 社区的真实解决方案汇总。5 大根因分析 + 7 种排查方法。">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://arismemo.github.io/antigravity-proxy-landing/guide.html">
+    <meta property="og:image" content="https://arismemo.github.io/antigravity-proxy-landing/og_image.png">
+
+    <!-- 结构化数据: 文章 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Antigravity Agent terminated due to error 完全解决指南",
+      "description": "深入分析 Antigravity 中 Agent terminated due to error 报错的根本原因，提供经社区验证的排查方法和终极解决方案。",
+      "datePublished": "2026-03-18",
+      "dateModified": "2026-03-18",
+      "author": { "@type": "Person", "name": "LIUKUN" }
+    }
+    </script>
+
+    <!-- 结构化数据: HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "如何解决 Antigravity Agent terminated due to error",
+      "description": "分步排查和解决 Antigravity 中 Agent terminated due to error 报错",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "禁用 MCP 服务器排查冲突",
+          "text": "在 Antigravity 设置中禁用所有 MCP 服务器（Agent sidebar → 三点菜单 → MCP servers → Manage），重新测试 Claude。逐个重新启用以找到冲突源，已知 Firebase MCP Tool #15（functions_get_logs）是高频冲突源。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "重置 Antigravity Onboarding",
+          "text": "按 Cmd+Shift+P（Mac）或 Ctrl+Shift+P（Windows），输入 Antigravity: Reset onboarding 并执行。这会强制与 Google 服务器重新握手，不会删除聊天记录。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "清理对话历史和缓存",
+          "text": "关闭 Antigravity，检查 ~/.gemini/antigravity/conversations 中超过 5MB 的对话文件并归档。清空 context_state 和 scratch 文件夹内容后重启。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "减小上下文输入量",
+          "text": "避免一次性读取超大文件。将大型代码库分批提供，限制 grep 结果长度，避免累积过多对话历史。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "测试网络连接延迟",
+          "text": "使用 curl 测试到 api.anthropic.com 的延迟。如果 Total 时间超过 2 秒或频繁超时，网络连接是主要瓶颈。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "更换代理节点或客户端",
+          "text": "V2EX 社区建议：尝试更换代理软件（如从 v2rayN 切换到 Clash），选择支持长连接的节点，或使用 Proxifier 做全局代理。"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "使用开发者专线",
+          "text": "如果以上方法无法根治，使用专为大模型开发环境优化的低延迟长连接专线。超时阈值 10 分钟以上，专为 SSE 流式传输设计。提供 1 天免费试用。"
+        }
+      ]
+    }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="534624a0-37f6-4d8e-a08b-5ac62aa3c696"></script>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA, #C084FC);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        article h2 { scroll-margin-top: 2rem; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300">
+
+    <!-- 导航 -->
+    <nav class="border-b border-slate-800 px-6 py-4">
+        <div class="max-w-3xl mx-auto flex items-center justify-between">
+            <a href="./" class="text-sm text-slate-400 hover:text-white transition-colors">← 返回首页</a>
+            <a href="https://t.me/LIUKUN4321" target="_blank" rel="noopener noreferrer" class="text-sm text-sky-400 hover:text-sky-300 transition-colors">联系获取免费试用 →</a>
+        </div>
+    </nav>
+
+    <article class="max-w-3xl mx-auto px-6 py-12 space-y-10">
+
+        <!-- 标题区 -->
+        <header class="space-y-4">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <time datetime="2026-03-18">2026 年 3 月 18 日更新</time>
+                <span>·</span>
+                <span>阅读约 8 分钟</span>
+                <span>·</span>
+                <span>来源：Reddit / GitHub / V2EX 社区</span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                Antigravity <span class="gradient-text">Agent terminated due to error</span> 完全解决指南
+            </h1>
+            <p class="text-lg text-slate-400 leading-relaxed">
+                如果你在使用 Antigravity + Claude Opus 时频繁遇到 <code class="text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded text-sm">Agent terminated due to error</code> 报错，这篇指南汇总了来自 Reddit、GitHub Issues 和 V2EX 社区的真实解决方案，帮你彻底搞定它。
+            </p>
+        </header>
+
+        <!-- 报错截图 -->
+        <figure class="relative">
+            <img src="error_screenshot.png" alt="Antigravity Agent terminated due to error 报错截图" class="rounded-xl border border-slate-700/50 w-full" width="640" height="640" loading="lazy">
+            <figcaption class="text-xs text-slate-600 mt-2 text-center">图：Antigravity 中典型的 Agent terminated due to error 报错界面</figcaption>
+        </figure>
+
+        <!-- 目录 -->
+        <nav class="bg-slate-900/50 border border-slate-800 rounded-xl p-5" aria-label="文章目录">
+            <h2 class="text-sm font-semibold text-slate-400 mb-3">📑 目录</h2>
+            <ol class="space-y-1.5 text-sm">
+                <li><a href="#what" class="text-blue-400 hover:text-blue-300 transition-colors">1. 这个报错是什么意思？</a></li>
+                <li><a href="#why" class="text-blue-400 hover:text-blue-300 transition-colors">2. 为什么中国用户特别容易遇到？</a></li>
+                <li><a href="#causes" class="text-blue-400 hover:text-blue-300 transition-colors">3. 五大根因分析</a></li>
+                <li><a href="#fix" class="text-blue-400 hover:text-blue-300 transition-colors">4. 七步排查法（经社区验证）</a></li>
+                <li><a href="#solution" class="text-blue-400 hover:text-blue-300 transition-colors">5. 为什么普通代理解决不了？</a></li>
+                <li><a href="#community" class="text-blue-400 hover:text-blue-300 transition-colors">6. V2EX 社区推荐的代理方案</a></li>
+                <li><a href="#faq" class="text-blue-400 hover:text-blue-300 transition-colors">7. 常见问题</a></li>
+            </ol>
+        </nav>
+
+        <!-- 正文 -->
+        <section id="what" class="space-y-4">
+            <h2 class="text-2xl font-bold text-white">1. 这个报错是什么意思？</h2>
+            <p>
+                <strong class="text-white">Agent terminated due to error</strong>（也写作 Agent execution terminated due to error）是 Antigravity 的 AI 编程助手在执行任务时异常终止的错误提示。它意味着 Claude 模型正在处理你的请求，但在中途被强制中断了。
+            </p>
+            <p>
+                根据 <a href="https://github.com/anthropics/claude-code" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">GitHub Issues</a> 和 <a href="https://www.reddit.com/r/ClaudeAI/" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">Reddit r/ClaudeAI</a> 的讨论，这是一个**笼统的终止信号**，真正原因可能包括网络超时、MCP 工具冲突、输入过大、配额用尽、或服务端临时故障。Antigravity 通常会提供 "Retry" 和 "Dismiss" 两个按钮，但很多用户反馈即使点击 Retry 也无法恢复。
+            </p>
+            <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm">
+                <p class="text-amber-400 font-semibold mb-1">💡 重要区分</p>
+                <p class="text-slate-400">如果你切换到 Gemini 模型可以正常工作，但 Claude 模型持续报错——那么问题很可能出在 <strong class="text-slate-300">MCP 工具冲突</strong>或<strong class="text-slate-300">网络连接</strong>，而不是 Antigravity 本身的 Bug。</p>
+            </div>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="why" class="space-y-4">
+            <h2 class="text-2xl font-bold text-white">2. 为什么中国用户特别容易遇到？</h2>
+            <p>这与 Claude 模型的工作方式以及中国的网络环境直接相关：</p>
+            <ul class="space-y-3 list-none">
+                <li class="flex items-start gap-3">
+                    <span class="text-red-400 font-bold mt-0.5">①</span>
+                    <div>
+                        <strong class="text-white">SSE 长连接机制</strong>：Claude Opus 的回复使用 Server-Sent Events (SSE) 流式传输。一次复杂的代码生成可能持续 <strong class="text-white">30 秒到 5 分钟</strong>。这要求网络连接在整个过程中不中断——但据 GitHub Issues 反馈，Claude Desktop 的客户端存在**硬编码的 60 秒超时限制**。
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-red-400 font-bold mt-0.5">②</span>
+                    <div>
+                        <strong class="text-white">代理链路叠加超时</strong>：中国用户必须通过代理访问 Anthropic API。多数通用代理的空闲超时阈值在 30-60 秒，叠加 Claude 自身的处理延迟后，极易触发超时断连。V2EX 上的多个帖子证实了这一点。
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-red-400 font-bold mt-0.5">③</span>
+                    <div>
+                        <strong class="text-white">MCP 工具放大问题</strong>：当启用多个 MCP 服务器时，每次工具调用都需要额外的网络往返。根据 Reddit 用户反馈，启用 5 个以上 MCP 工具时报错率显著上升，因为 Claude 会尝试处理所有潜在的工具调用，导致上下文溢出。
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="causes" class="space-y-4">
+            <h2 class="text-2xl font-bold text-white">3. 五大根因分析</h2>
+            <p class="text-slate-400 text-sm">以下原因按社区反馈频率排序：</p>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-xs font-bold">1</span>
+                        网络超时（最常见 ~70%）
+                    </h3>
+                    <p class="text-xs text-slate-400">代理节点延迟高或连接不稳定，SSE 流在传输中途断开。<strong class="text-slate-300">中国大陆用户的首要原因</strong>。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">2</span>
+                        MCP 工具冲突
+                    </h3>
+                    <p class="text-xs text-slate-400">特定 MCP 工具与 Claude 模型存在已知冲突。<strong class="text-slate-300">Firebase MCP Tool #15（functions_get_logs）</strong>是社区确认的高频冲突源。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xs font-bold">3</span>
+                        上下文过大 / Payload Too Large
+                    </h3>
+                    <p class="text-xs text-slate-400">读取大文件（>5MB）、过长的 grep 结果、或累积过多对话历史，触发 "Payload Too Large" 或 "Context Overflow"。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">4</span>
+                        账户配额用尽（429 Too Many Requests）
+                    </h3>
+                    <p class="text-xs text-slate-400">Google 账户的 Claude API 使用量达到配额上限。错误日志中可能包含 429 状态码。切换 Google 账户可验证。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 space-y-2 sm:col-span-2">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">5</span>
+                        Antigravity 内部状态损坏
+                    </h3>
+                    <p class="text-xs text-slate-400">长时间使用后，本地缓存的对话历史或上下文状态文件可能损坏。Reddit 多个帖子反馈在 <code class="text-xs">~/.gemini/antigravity/conversations</code> 中清理超大文件后恢复正常。</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="fix" class="space-y-6">
+            <h2 class="text-2xl font-bold text-white">4. 七步排查法（经社区验证）</h2>
+            <p class="text-sm text-slate-400">以下方法来自 Reddit、GitHub Issues 和 V2EX 社区的真实用户反馈，按推荐顺序排列：</p>
+
+            <div class="space-y-4">
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 1 步：禁用所有 MCP 服务器</h3>
+                    <p class="text-sm">打开 Agent sidebar（<kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">Ctrl+L</kbd>），点击右上角三点菜单 → <strong class="text-white">MCP servers</strong> → <strong class="text-white">Manage MCP Servers</strong>，<strong class="text-white">禁用全部</strong>。开一个新对话测试 Claude。</p>
+                    <p class="text-sm">如果恢复正常，逐个重新启用 MCP 服务器找到冲突源。</p>
+                    <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs text-slate-400">
+                        ⚠️ <strong class="text-red-400">已知冲突</strong>：Firebase MCP 的 <code>functions_get_logs</code> 工具（Tool #15）会导致 Claude Sonnet/Opus 崩溃。多个 Reddit 帖子和 GitHub Issue 已确认。
+                    </div>
+                </div>
+
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 2 步：重置 Antigravity Onboarding</h3>
+                    <p class="text-sm">按 <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">Cmd+Shift+P</kbd>（Mac）或 <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">Ctrl+Shift+P</kbd>（Windows），输入：</p>
+                    <pre class="bg-slate-900 text-green-400 text-xs p-3 rounded-lg"><code>Antigravity: Reset onboarding</code></pre>
+                    <p class="text-sm">这会强制与 Google 服务器重新握手，<strong class="text-white">不会删除聊天记录</strong>，是 Reddit 社区最推荐的快速修复之一。</p>
+                </div>
+
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 3 步：清理本地缓存</h3>
+                    <p class="text-sm">关闭 Antigravity，然后清理可能损坏的本地文件：</p>
+                    <pre class="bg-slate-900 text-green-400 text-xs p-3 rounded-lg overflow-x-auto"><code># 备份后清理超大对话文件（>5MB）
+find ~/.gemini/antigravity/conversations -size +5M -ls
+
+# 清空上下文状态和临时文件
+rm -rf ~/.gemini/antigravity/context_state/*
+rm -rf ~/.gemini/antigravity/scratch/*</code></pre>
+                    <p class="text-sm">重启 Antigravity 后重新测试。</p>
+                </div>
+
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 4 步：减小输入体积</h3>
+                    <p class="text-sm">避免让 Claude 一次性处理过大的输入：</p>
+                    <ul class="text-sm space-y-1 list-disc list-inside text-slate-400">
+                        <li>大文件分批提供，不要一次读取 >5MB 的文件</li>
+                        <li>限制 <code class="text-xs bg-slate-800 px-1 rounded">grep</code> 结果行数</li>
+                        <li>对话过长时开一个新会话</li>
+                        <li>避免在 MCP 指令中写过长的系统 prompt</li>
+                    </ul>
+                </div>
+
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 5 步：切换 Google 账号排查配额</h3>
+                    <p class="text-sm">如果错误日志中包含 <code class="text-xs bg-slate-800 px-1 rounded">429 Too Many Requests</code>，可能是账户配额用尽。尝试在 Antigravity 中<strong class="text-white">登出并切换到另一个 Google 账号</strong>，看是否恢复正常。</p>
+                </div>
+
+                <div class="border-l-2 border-blue-500 pl-5 space-y-2">
+                    <h3 class="text-base font-bold text-white">第 6 步：测试网络延迟</h3>
+                    <p class="text-sm">在终端运行以下命令，测试到 Anthropic API 的连接质量：</p>
+                    <pre class="bg-slate-900 text-green-400 text-xs p-3 rounded-lg overflow-x-auto"><code>curl -o /dev/null -s -w "DNS: %{time_namelookup}s | Connect: %{time_connect}s | Total: %{time_total}s\n" https://api.anthropic.com</code></pre>
+                    <p class="text-sm">如果 <strong class="text-white">Total > 2 秒</strong> 或频繁超时，你的网络就是主要瓶颈。</p>
+                </div>
+
+                <div class="border-l-2 border-purple-500 pl-5 space-y-2 bg-purple-500/5 -ml-[2px] border rounded-r-xl p-5">
+                    <h3 class="text-base font-bold text-white">第 7 步：使用开发者专线 ⭐</h3>
+                    <p class="text-sm">如果以上步骤无法根治，问题大概率出在<strong class="text-white">代理层的连接保持能力</strong>上。GitHub Issues 中有开发者反馈 Claude Desktop 存在硬编码的 60 秒客户端超时，普通代理叠加后极易触发断连。</p>
+                    <p class="text-sm">我们提供专为大模型开发环境优化的网络专线：</p>
+                    <ul class="text-sm space-y-1 mt-2">
+                        <li>✅ 长连接保护——超时阈值 <strong class="text-white">10 分钟+</strong>，专为 SSE / WebSocket 设计</li>
+                        <li>✅ 低延迟直连——精选节点，到 Anthropic API 延迟 <strong class="text-white">&lt; 100ms</strong></li>
+                        <li>✅ 高带宽不限流——大文件传输毫无压力</li>
+                        <li>🎁 <strong class="text-emerald-400">免费试用 1 天，无需付款</strong></li>
+                    </ul>
+                    <a href="https://t.me/LIUKUN4321" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 mt-3 px-5 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-[#2AABEE] to-[#229ED9] hover:from-[#229ED9] hover:to-[#1E8ECB] shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all duration-300 text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                        立即领取免费试用
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="solution" class="space-y-4">
+            <h2 class="text-2xl font-bold text-white">5. 为什么普通代理解决不了？</h2>
+            <p>
+                大多数代理服务（包括常见的商业机场）是为<strong class="text-white">短连接</strong>设计的——打开网页、看视频、刷社交媒体。这些场景的 HTTP 请求通常在几秒内完成。
+            </p>
+            <p>
+                但 Claude Opus 的工作方式完全不同：
+            </p>
+            <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-400">普通网页请求</span>
+                    <span class="text-white font-mono">0.5 - 3 秒</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: 5%"></div>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-400">Claude Opus 代码生成（有 MCP）</span>
+                    <span class="text-white font-mono">30 - 300 秒</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-red-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-400">Claude Desktop 客户端超时</span>
+                    <span class="text-white font-mono text-yellow-400">~60 秒（硬编码）</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 20%"></div>
+                </div>
+            </div>
+            <p>
+                当代理节点的空闲超时阈值（30-60 秒）碰上 Claude 60 秒的客户端超时，再加上高延迟造成的处理时间膨胀——三重叠加的结果就是 <code class="text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded text-sm">Agent terminated due to error</code>。
+            </p>
+            <p>
+                我们的开发者专线将超时阈值设置为 <strong class="text-white">10 分钟以上</strong>，并针对 SSE 流式传输做了专门优化——即使在 Claude 长时间"思考"期间没有数据传输，连接也不会被断开。
+            </p>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="community" class="space-y-4">
+            <h2 class="text-2xl font-bold text-white">6. V2EX 社区推荐的代理方案</h2>
+            <p class="text-sm text-slate-400">以下方案来自 V2EX 社区用户的真实反馈：</p>
+            <div class="space-y-3">
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-white mb-1">🔄 更换代理客户端</h3>
+                    <p class="text-xs text-slate-400">多位用户反馈从 v2rayN 切换到 <strong class="text-slate-300">Clash Verge</strong> 后问题有所缓解，可能与 Clash 的连接复用策略有关。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-white mb-1">🌐 使用 Proxifier 全局代理</h3>
+                    <p class="text-xs text-slate-400">macOS 用户推荐使用 Proxifier 进行进程级代理，避免系统代理不完整导致的 DNS 泄漏和连接不稳定。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-white mb-1">📍 选择静态住宅 IP 节点</h3>
+                    <p class="text-xs text-slate-400">部分用户发现使用静态住宅 IP（而非数据中心 IP）可以降低被 Anthropic 限速的概率，从而减少超时报错。</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-white mb-1">📶 路由器层面配置代理</h3>
+                    <p class="text-xs text-slate-400">将代理配置在路由器层面（如 OpenWrt + Clash），确保所有流量（包括 Antigravity 的后台连接）都走代理通道，避免 DNS 污染。</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-800">
+
+        <section id="faq" class="space-y-6">
+            <h2 class="text-2xl font-bold text-white">7. 常见问题</h2>
+
+            <details class="group bg-slate-900/30 border border-slate-800 rounded-xl" open>
+                <summary class="flex items-center justify-between p-4 cursor-pointer text-white font-medium text-sm hover:text-blue-400 transition-colors">
+                    这条专线和普通机场有什么区别？
+                    <span class="text-slate-600 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-slate-400 space-y-2">
+                    <p>普通机场为浏览网页和视频优化，我们的专线针对大模型开发场景做了三个关键调整：</p>
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>长连接超时阈值 10 分钟+（普通机场通常 30-60 秒）</li>
+                        <li>SSE/WebSocket 流式传输特殊处理，不会在"空闲"时断开</li>
+                        <li>精选低延迟节点，到 Anthropic API 延迟 < 100ms</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="group bg-slate-900/30 border border-slate-800 rounded-xl">
+                <summary class="flex items-center justify-between p-4 cursor-pointer text-white font-medium text-sm hover:text-blue-400 transition-colors">
+                    免费试用有什么限制？
+                    <span class="text-slate-600 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-slate-400">
+                    <p>没有功能限制。试用期 1 天，流量不限，速度不限，和付费用户完全一样。满意后通过 Telegram 续费即可。</p>
+                </div>
+            </details>
+
+            <details class="group bg-slate-900/30 border border-slate-800 rounded-xl">
+                <summary class="flex items-center justify-between p-4 cursor-pointer text-white font-medium text-sm hover:text-blue-400 transition-colors">
+                    如何配置到我的客户端？
+                    <span class="text-slate-600 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-slate-400">
+                    <p>联系 Telegram 后会收到一个订阅链接，复制到 Clash 或 V2ray 客户端中导入即可。全程不超过 2 分钟。</p>
+                </div>
+            </details>
+
+            <details class="group bg-slate-900/30 border border-slate-800 rounded-xl">
+                <summary class="flex items-center justify-between p-4 cursor-pointer text-white font-medium text-sm hover:text-blue-400 transition-colors">
+                    除了 Antigravity，还能用于其他 AI 工具吗？
+                    <span class="text-slate-600 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-slate-400">
+                    <p>可以。专线对所有需要长连接的 AI 开发工具都有效，包括 Claude Code、ChatGPT、GitHub Copilot、Cursor 等。</p>
+                </div>
+            </details>
+
+            <details class="group bg-slate-900/30 border border-slate-800 rounded-xl">
+                <summary class="flex items-center justify-between p-4 cursor-pointer text-white font-medium text-sm hover:text-blue-400 transition-colors">
+                    我该先排查 MCP 还是先解决网络？
+                    <span class="text-slate-600 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 text-sm text-slate-400">
+                    <p>建议先禁用 MCP 测试，因为这最简单（30 秒完成）。如果禁用后仍然报错，再排查网络问题。两者是独立的根因，有可能同时存在。</p>
+                </div>
+            </details>
+        </section>
+
+        <!-- 底部 CTA -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+            <h2 class="text-xl font-bold text-white">还在被报错打断思路？</h2>
+            <p class="text-sm text-slate-400">免费试用 1 天，体验零中断的 Claude Opus 编程。</p>
+            <a href="https://t.me/LIUKUN4321" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#2AABEE] to-[#229ED9] hover:from-[#229ED9] hover:to-[#1E8ECB] shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all duration-300">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                立即领取免费试用
+            </a>
+            <p class="text-xs text-slate-600">Telegram @LIUKUN4321</p>
+        </div>
+
+    </article>
+
+    <!-- 页脚 -->
+    <footer class="border-t border-slate-800 px-6 py-6 text-center text-xs text-slate-600">
+        <p>© 2026 Antigravity 开发者专线 · <a href="./" class="hover:text-slate-400 transition-colors">首页</a> · <a href="https://t.me/LIUKUN4321" target="_blank" rel="noopener noreferrer" class="hover:text-slate-400 transition-colors">联系我们</a></p>
+    </footer>
+
+</body>
+</html>
