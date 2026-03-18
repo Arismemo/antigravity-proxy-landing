@@ -106,7 +106,7 @@
 
             <!-- 报错截图 -->
             <div class="relative max-w-md mx-auto lg:mx-0">
-                <img src="error_screenshot.png" alt="Antigravity Agent terminated due to error 报错截图" class="rounded-xl border border-slate-700/50 shadow-lg shadow-red-500/10 w-full opacity-90">
+                <img src="error_screenshot.png" alt="Antigravity Agent terminated due to error 报错截图" class="rounded-xl border border-slate-700/50 shadow-lg shadow-red-500/10 w-full opacity-90" width="640" height="640">
                 <div class="absolute -bottom-2 -right-2 bg-red-500/90 text-white text-xs font-medium px-2.5 py-1 rounded-lg shadow">看起来很眼熟？</div>
             </div>
 
@@ -175,15 +175,5 @@
         </div>
     </footer>
 
-    <script>
-        function copyWechat() {
-            const wechatId = document.getElementById('wechat-id').innerText;
-            navigator.clipboard.writeText(wechatId).then(() => {
-                const hint = document.getElementById('copy-hint');
-                hint.classList.remove('hidden');
-                setTimeout(() => hint.classList.add('hidden'), 2000);
-            });
-        }
-    </script>
 </body>
 </html>
